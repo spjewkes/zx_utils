@@ -183,9 +183,9 @@ def process_data_block(data, header):
     if header.get_type() is 0:
         dump_basic(data, header.get_length())
     elif header.get_type() is 1:
-        None
+        dump_data(data, header.get_length())
     elif header.get_type() is 2:
-        None
+        dump_data(data, header.get_length())
     elif header.get_type() is 3:
         dump_data(data, header.get_length())
 
@@ -193,7 +193,7 @@ def dump_data(data, length):
     """ Dump data to stdout """
     for i in range(length):
         if i % 16 is 0:
-            print("{:4d}: ".format(i)),
+            print("{:6d}: ".format(i)),
         print("0x{:02x} ".format(ord(data[i]))),
         if i % 16 is 15:
             print
