@@ -3,10 +3,12 @@
 
 import sys
 
-basic_dict = {
-     94: u"\u2191".encode('utf-8'),
-     96: u"\u00a3".encode('utf-8'),
-    127: u"\u00a9".encode('utf-8'),
+# Maps as many non-standard ascii values in the ZX Spectrum character
+# map as possible.
+char_map = {
+     94: u"\u2191".encode('utf-8'), # Up-arrow (caret)
+     96: u"\u00a3".encode('utf-8'), # Pound sign
+    127: u"\u00a9".encode('utf-8'), # Copyright sign
     128: u" ".encode('utf-8'),
     129: u"\u259d".encode('utf-8'),
     130: u"\u2598".encode('utf-8'),
@@ -23,6 +25,27 @@ basic_dict = {
     141: u"\u259f".encode('utf-8'),
     142: u"\u2599".encode('utf-8'),
     143: u"\u2588".encode('utf-8'),
+    144: "<UDG A>",
+    145: "<UDG B>",
+    146: "<UDG C>",
+    147: "<UDG D>",
+    148: "<UDG E>",
+    149: "<UDG F>",
+    150: "<UDG G>",
+    151: "<UDG H>",
+    152: "<UDG I>",
+    153: "<UDG J>",
+    154: "<UDG K>",
+    155: "<UDG L>",
+    156: "<UDG M>",
+    157: "<UDG N>",
+    158: "<UDG O>",
+    159: "<UDG P>",
+    160: "<UDG Q>",
+    161: "<UDG R>",
+    162: "<UDG S>",
+    163: "<UDG T>",
+    164: "<UDG U>",
     165: "RND ",
     166: "INKEY$ ",
     167: "PI ",
@@ -117,6 +140,9 @@ basic_dict = {
     }
 
 class Header:
+    """
+    Decodes data that points to the start of a header block.
+    """
     def __init__(self, data):
         self.type = ord(data[0])
         self.filename = data[1:10]
@@ -135,10 +161,15 @@ class Header:
     def get_length(self):
         return self.length
 
-def read_16bit_size(data):
-    return ord(data[0]) + ord(data[1]) * 256
+def read_16bit_size(data, little_endian=True):
+    """ Read next two bytes as a 16-bit value """
+    if little_endian:
+        return ord(data[0]) + ord(data[1]) * 256
+    else:
+        return ord(data[1]) + ord(data[0]) * 256
 
 def process_block(data, size, prev_header=None):
+    """ Process the next block of data """
     header = None
     if ord(data[0]) is 0:
         header = Header(data[1:])
@@ -148,6 +179,7 @@ def process_block(data, size, prev_header=None):
     return header
 
 def process_data_block(data, header):
+    """ Process a data block """
     if header.get_type() is 0:
         dump_basic(data, header.get_length())
     elif header.get_type() is 1:
@@ -158,6 +190,7 @@ def process_data_block(data, header):
         dump_data(data, header.get_length())
 
 def dump_data(data, length):
+    """ Dump data to stdout """
     for i in range(length):
         if i % 16 is 0:
             print("{:4d}: ".format(i)),
@@ -167,9 +200,10 @@ def dump_data(data, length):
     print
 
 def dump_basic(data, length):
+    """ Dump basic data block to stdout """
     offset = 0
     while offset < length:
-        line_num = ord(data[offset+1]) + ord(data[offset]) * 256
+        line_num = read_16bit_size(data[offset:], little_endian=False)
         print("{:8} ".format(line_num)),
 
         text_length = read_16bit_size(data[offset+2:])
@@ -181,8 +215,8 @@ def dump_basic(data, length):
             if char is 0xe:
                 # Special case - number and next five bytes are the number itself
                 text_pos += 5
-            elif char in basic_dict.keys():
-                sys.stdout.write("{}".format(basic_dict[char]))
+            elif char in char_map.keys():
+                sys.stdout.write("{}".format(char_map[char]))
             elif char >= 32 and char <= 126:
                 sys.stdout.write(chr(char))
             else:
@@ -195,6 +229,7 @@ def dump_basic(data, length):
 
 if __name__ == "__main__":
 
+    # Load file and being processing blocks
     if len(sys.argv) > 1:
         print "Got file: ", sys.argv[1]
         with open(sys.argv[1], "rb") as f:
@@ -203,6 +238,8 @@ if __name__ == "__main__":
             block = 0
             header = None
 
+            # If the block is a header, it is returned and passed on to the subsequent
+            # block to be processed (which may wish to refer to it)
             while offset < len(data):
                 block_size = read_16bit_size(data[offset:])
                 print("Processing block {} with size (bytes): {}".format(block, block_size))
