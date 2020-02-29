@@ -12,9 +12,11 @@ class TZXHandler(object):
     def __init__(self, data):
         self.data = data
         self.pos = 0
+        self.blocks = list()
 
     major_ver, minor_ver = 1, 20
-    TZXHeader = namedtuple('TZXHeader', ['signature', 'end_of_text', 'major_ver', 'minor_ver'])
+    Header = namedtuple('Header', ['signature', 'end_of_text', 'major_ver', 'minor_ver'])
+    TextDescription = namedtuple('TextDescription', ['description'])
 
     @staticmethod
     def is_tzx(data):
@@ -27,15 +29,35 @@ class TZXHandler(object):
         """
         Processes the TZX File.
         """
-        header = self._process_tzxheader()
+        header = self._process_header()
         print("File is version {}.{:02d}".format(header.major_ver, header.minor_ver))
         if header.major_ver > TZXHandler.major_ver or header.minor_ver > TZXHandler.minor_ver:
             raise RuntimeError("This script only supports TZX files up to version {}.{:02d}".format(TZXHandler.major_ver, TZXHandler.minor_ver))
 
-    def _process_tzxheader(self):
-        header = TZXHandler.TZXHeader(*struct.unpack_from('7sBBB', self.data, self.pos))
+        self.blocks.append(header)
+
+        while self.pos < len(self.data):
+            nextID = struct.unpack_from('B', self.data, self.pos)[0]
+            self.pos += 1
+
+            if nextID == 0x30:
+                block = self._process_text_description()
+            else:
+                raise RuntimeError("TZX unsupported ID: 0x{:02X}".format(nextID))
+
+            self.blocks.append(block)
+
+    def _process_header(self):
+        header = TZXHandler.Header(*struct.unpack_from('7sBBB', self.data, self.pos))
         self.pos += 10
         return header
+
+    def _process_text_description(self):
+        length = struct.unpack_from('B', self.data, self.pos)[0]
+        bin_message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0]
+        message = TZXHandler.TextDescription(bin_message.decode('ascii'))
+        self.pos += 1 + length
+        return message
 
 def _main():
     """
