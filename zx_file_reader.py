@@ -34,8 +34,6 @@ class TZXHandler(object):
 
     def _process_tzxheader(self):
         header = TZXHandler.TZXHeader(*struct.unpack_from('7sBBB', self.data, self.pos))
-        # arse = struct.unpack_from('7sBBB', self.data, self.pos)
-        # print(arse)
         self.pos += 10
         return header
 
