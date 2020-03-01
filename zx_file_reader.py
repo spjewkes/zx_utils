@@ -87,7 +87,7 @@ class DataBlockBinary(Block):
                 text += "0x{:04X} : ".format(i)
             else:
                 text += " "
-            text += "0x{:02X}".format(ord(byte))
+            text += "0x{:02X}".format(byte)
         return text
 
     @property
@@ -104,7 +104,11 @@ class TapeHeader(DataBlockBinary):
 
     @property
     def dump(self):
-        return super(TapeHeader, self).dump
+        block_desc = { 0: "Program", 1: "Number array", 2: "Character array", 3: "Code file" }
+        flag, block_type, filename, length, param1, param2, checksum = struct.unpack_from('BB10sHHHB', self._data)
+        desc = "Flag : 0x{:02X}\nBlock type : {}\nFilename : {}\nBlock length : {}\nParameter 1 : {}\nParameter 2 : {}\nChecksum : 0x{:02X}\n{}".format(
+            flag, block_desc[block_type], filename.decode('ascii'), length, param1, param2, checksum, super(TapeHeader, self).dump)
+        return desc
 
     @property
     def typedesc(self):
@@ -180,8 +184,8 @@ class TZXHandler(object):
     def _process_standard_speed_data(self, blockid, typedesc):
         pause, length = struct.unpack_from('HH', self.data, self.pos)
         self.pos += 4
-        data = struct.unpack_from('{}c'.format(length), self.data, self.pos)
-        isHeader = True if length == 19 and data[0] == b'\x00' else False
+        data = b''.join(struct.unpack_from('{}c'.format(length), self.data, self.pos))
+        isHeader = True if length == 19 and data[0] == 0x00 else False
         self.pos += length
         if isHeader:
             return TapeHeader(blockid, typedesc, data)
