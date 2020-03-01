@@ -43,7 +43,6 @@ class Header(Block):
     def version(self):
         return (self._version_major, self._version_minor)
 
-
 class DataBlockAscii(Block):
     """
     Class for holding ASCII data blocks.
@@ -55,6 +54,17 @@ class DataBlockAscii(Block):
     @property
     def dump(self):
         return self._text
+
+class DataBlockBinary(Block):
+    """
+    Class for holding binary data blocks.
+    """
+    def __init__(self, blockid, data):
+        super(DataBlockBinary, self).__init__(blockid)
+        self._data = data
+
+    def dump(self):
+        return "<binary blob of {} bytes>".format(len(self._data))
 
 class TZXHandler(object):
     """
@@ -89,7 +99,9 @@ class TZXHandler(object):
             nextID = struct.unpack_from('B', self.data, self.pos)[0]
             self.pos += 1
 
-            if nextID == 0x30:
+            if nextID == 0x10:
+                block = self._process_standard_speed_data(nextID)
+            elif nextID == 0x30:
                 block = self._process_text_description(nextID)
             else:
                 print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(nextID))
@@ -110,6 +122,11 @@ class TZXHandler(object):
         signature, end_of_text, major, minor = struct.unpack_from('7sBBB', self.data, self.pos)
         self.pos += 10
         return Header(blockid, FileType.TZX, major, minor)
+
+    def _process_standard_speed_data(self, blockid):
+        pause, length = struct.unpack_from('HH', self.data, self.pos)
+        self.pos += 4 + length
+        return DataBlockBinary(blockid, b'0')
 
     def _process_text_description(self, blockid):
         length = struct.unpack_from('B', self.data, self.pos)[0]
