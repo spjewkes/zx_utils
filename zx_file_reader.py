@@ -95,6 +95,22 @@ class DataBlockBinary(Block):
         # Override base class to add size of text
         return "{} (size {} bytes)".format(super(DataBlockBinary, self).typedesc, len(self._data))
 
+class TapeHeader(DataBlockBinary):
+    """
+    Class for managing a specialized binary data block that has been identified as a header block.
+    """
+    def __init__(self, blockid, typedesc, data):
+        super(TapeHeader, self).__init__(blockid, typedesc, data)
+
+    @property
+    def dump(self):
+        return super(TapeHeader, self).dump
+
+    @property
+    def typedesc(self):
+        # Override base class to add note that this is a tape header
+        return "{} header".format(super(TapeHeader, self).typedesc)
+
 class TZXHandler(object):
     """
     Class for handling the processing of TZX files.
@@ -152,7 +168,7 @@ class TZXHandler(object):
         Output to stdout, the content of each block.
         """
         for i, block in enumerate(self.blocks):
-            if i == blockid or not blockid:
+            if i == blockid or blockid is None:
                 print("Block: {:4d} ({})".format(i, block.idstr))
                 print(block.dump)
 
@@ -163,8 +179,12 @@ class TZXHandler(object):
 
     def _process_standard_speed_data(self, blockid, typedesc):
         pause, length = struct.unpack_from('HH', self.data, self.pos)
+        self.pos += 4
         data = struct.unpack_from('{}c'.format(length), self.data, self.pos)
-        self.pos += 4 + length
+        self.pos += length
+        if length == 19:
+            # Special case, 19 bytes defines a tape header
+            return TapeHeader(blockid, typedesc, data)
         return DataBlockBinary(blockid, typedesc, data)
 
     def _process_pause_command(self, blockid, typedesc):
@@ -175,8 +195,9 @@ class TZXHandler(object):
 
     def _process_text_description(self, blockid, typedesc):
         length = struct.unpack_from('B', self.data, self.pos)[0]
+        self.pos += 1
         message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('ascii')
-        self.pos += 1 + length
+        self.pos += length
         return DataBlockAscii(blockid, typedesc, message)
 
 def _main():
