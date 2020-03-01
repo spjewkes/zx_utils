@@ -8,11 +8,23 @@ from enum import Enum
 class FileType(Enum):
     TZX = 1
 
-class Header(object):
+class Block(object):
+    """
+    Base class for all blocks.
+    """
+    def __init__(self, blockid):
+        self._id = blockid
+
+    @property
+    def blockid(self):
+        return self._id
+
+class Header(Block):
     """
     Class for holding header information.
     """
-    def __init__(self, filetype, version_major=0, version_minor=0):
+    def __init__(self, blockid, filetype, version_major=0, version_minor=0):
+        super(Header, self).__init__(blockid)
         self._filetype = filetype
         self._version_major = version_major
         self._version_minor = version_minor
@@ -32,11 +44,12 @@ class Header(object):
         return (self._version_major, self._version_minor)
 
 
-class DataBlockAscii(object):
+class DataBlockAscii(Block):
     """
     Class for holding ASCII data blocks.
     """
-    def __init__(self, text):
+    def __init__(self, blockid, text):
+        super(DataBlockAscii, self).__init__(blockid)
         self._text = text
 
     @property
@@ -65,7 +78,7 @@ class TZXHandler(object):
         """
         Processes the TZX File.
         """
-        header = self._process_header()
+        header = self._process_header(None)
         major, minor = header.version
         if major > TZXHandler.major_ver or minor > TZXHandler.minor_ver:
             raise RuntimeError("This script only supports TZX files up to version {}.{:02d}".format(TZXHandler.major_ver, TZXHandler.minor_ver))
@@ -77,7 +90,7 @@ class TZXHandler(object):
             self.pos += 1
 
             if nextID == 0x30:
-                block = self._process_text_description()
+                block = self._process_text_description(nextID)
             else:
                 print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(nextID))
                 break
@@ -85,19 +98,24 @@ class TZXHandler(object):
             self.blocks.append(block)
 
     def dump(self):
-        for block in self.blocks:
+        for i, block in enumerate(self.blocks):
+            print("Block: {:4d}".format(i), end='')
+            if block.blockid:
+                print(" (ID 0x{:02X})".format(block.blockid))
+            else:
+                print()
             print(block.dump)
 
-    def _process_header(self):
+    def _process_header(self, blockid):
         signature, end_of_text, major, minor = struct.unpack_from('7sBBB', self.data, self.pos)
         self.pos += 10
-        return Header(FileType.TZX, major, minor)
+        return Header(blockid, FileType.TZX, major, minor)
 
-    def _process_text_description(self):
+    def _process_text_description(self, blockid):
         length = struct.unpack_from('B', self.data, self.pos)[0]
         message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('ascii')
         self.pos += 1 + length
-        return DataBlockAscii(message)
+        return DataBlockAscii(blockid, message)
 
 def _main():
     """
@@ -117,6 +135,8 @@ def _main():
         processor = TZXHandler(data)
 
     processor.process()
+
+    # This will be removed at some point but for now it helps development
     processor.dump()
 
 if __name__ == "__main__":
