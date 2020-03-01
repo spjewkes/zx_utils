@@ -181,9 +181,9 @@ class TZXHandler(object):
         pause, length = struct.unpack_from('HH', self.data, self.pos)
         self.pos += 4
         data = struct.unpack_from('{}c'.format(length), self.data, self.pos)
+        isHeader = True if length == 19 and data[0] == b'\x00' else False
         self.pos += length
-        if length == 19:
-            # Special case, 19 bytes defines a tape header
+        if isHeader:
             return TapeHeader(blockid, typedesc, data)
         return DataBlockBinary(blockid, typedesc, data)
 
