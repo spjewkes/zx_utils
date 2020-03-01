@@ -120,6 +120,8 @@ class TZXHandler(object):
 
             if nextID == 0x10:
                 block = self._process_standard_speed_data(nextID, "Standard Speed Data Block")
+            elif nextID == 0x20:
+                block = self._process_pause_command(nextID, "Pause Command")
             elif nextID == 0x30:
                 block = self._process_text_description(nextID, "Text Description")
             else:
@@ -153,6 +155,12 @@ class TZXHandler(object):
         data = struct.unpack_from('{}c'.format(length), self.data, self.pos)
         self.pos += 4 + length
         return DataBlockBinary(blockid, typedesc, data)
+
+    def _process_pause_command(self, blockid, typedesc):
+        pause = struct.unpack_from('H', self.data, self.pos)[0]
+        text = "Pause: {} ms".format(pause)
+        self.pos += 2
+        return DataBlockAscii(blockid, typedesc, text)
 
     def _process_text_description(self, blockid, typedesc):
         length = struct.unpack_from('B', self.data, self.pos)[0]
