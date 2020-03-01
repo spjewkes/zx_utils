@@ -12,19 +12,28 @@ class Block(object):
     """
     Base class for all blocks.
     """
-    def __init__(self, blockid):
+    def __init__(self, blockid, typedesc):
         self._id = blockid
+        self._typedesc = typedesc
 
     @property
     def blockid(self):
         return self._id
 
+    @property
+    def idstr(self):
+        return "ID 0x{:02X}".format(self._id) if self._id else "ID n/a"
+
+    @property
+    def typedesc(self):
+        return self._typedesc
+
 class Header(Block):
     """
     Class for holding header information.
     """
-    def __init__(self, blockid, filetype, version_major=0, version_minor=0):
-        super(Header, self).__init__(blockid)
+    def __init__(self, blockid, typedesc, filetype, version_major=0, version_minor=0):
+        super(Header, self).__init__(blockid, typedesc)
         self._filetype = filetype
         self._version_major = version_major
         self._version_minor = version_minor
@@ -47,8 +56,8 @@ class DataBlockAscii(Block):
     """
     Class for holding ASCII data blocks.
     """
-    def __init__(self, blockid, text):
-        super(DataBlockAscii, self).__init__(blockid)
+    def __init__(self, blockid, typedesc, text):
+        super(DataBlockAscii, self).__init__(blockid, typedesc)
         self._text = text
 
     @property
@@ -59,12 +68,22 @@ class DataBlockBinary(Block):
     """
     Class for holding binary data blocks.
     """
-    def __init__(self, blockid, data):
-        super(DataBlockBinary, self).__init__(blockid)
+    def __init__(self, blockid, typedesc, data):
+        super(DataBlockBinary, self).__init__(blockid, typedesc)
         self._data = data
 
+    @property
     def dump(self):
-        return "<binary blob of {} bytes>".format(len(self._data))
+        text = ""
+        for i, byte in enumerate(self._data):
+            if i % 16 == 0:
+                if i > 0:
+                    text += "\n"
+                text += "0x{:04X} : ".format(i)
+            else:
+                text += " "
+            text += "0x{:02X}".format(ord(byte))
+        return text
 
 class TZXHandler(object):
     """
@@ -88,7 +107,7 @@ class TZXHandler(object):
         """
         Processes the TZX File.
         """
-        header = self._process_header(None)
+        header = self._process_header(None, "Header")
         major, minor = header.version
         if major > TZXHandler.major_ver or minor > TZXHandler.minor_ver:
             raise RuntimeError("This script only supports TZX files up to version {}.{:02d}".format(TZXHandler.major_ver, TZXHandler.minor_ver))
@@ -100,39 +119,46 @@ class TZXHandler(object):
             self.pos += 1
 
             if nextID == 0x10:
-                block = self._process_standard_speed_data(nextID)
+                block = self._process_standard_speed_data(nextID, "Standard Speed Data Block")
             elif nextID == 0x30:
-                block = self._process_text_description(nextID)
+                block = self._process_text_description(nextID, "Text Description")
             else:
                 print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(nextID))
                 break
 
             self.blocks.append(block)
 
-    def dump(self):
+    def summarize(self):
+        """
+        Summarize the contents of each block to stdout.
+        """
         for i, block in enumerate(self.blocks):
-            print("Block: {:4d}".format(i), end='')
-            if block.blockid:
-                print(" (ID 0x{:02X})".format(block.blockid))
-            else:
-                print()
+            print("Block: {:4d} ({}) - {}".format(i, block.idstr, block.typedesc))
+
+    def dump(self):
+        """
+        Output to stdout, the content of each block.
+        """
+        for i, block in enumerate(self.blocks):
+            print("Block: {:4d} ({})".format(i, block.idstr))
             print(block.dump)
 
-    def _process_header(self, blockid):
+    def _process_header(self, blockid, typedesc):
         signature, end_of_text, major, minor = struct.unpack_from('7sBBB', self.data, self.pos)
         self.pos += 10
-        return Header(blockid, FileType.TZX, major, minor)
+        return Header(blockid, typedesc, FileType.TZX, major, minor)
 
-    def _process_standard_speed_data(self, blockid):
+    def _process_standard_speed_data(self, blockid, typedesc):
         pause, length = struct.unpack_from('HH', self.data, self.pos)
+        data = struct.unpack_from('{}c'.format(length), self.data, self.pos)
         self.pos += 4 + length
-        return DataBlockBinary(blockid, b'0')
+        return DataBlockBinary(blockid, typedesc, data)
 
-    def _process_text_description(self, blockid):
+    def _process_text_description(self, blockid, typedesc):
         length = struct.unpack_from('B', self.data, self.pos)[0]
         message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('ascii')
         self.pos += 1 + length
-        return DataBlockAscii(blockid, message)
+        return DataBlockAscii(blockid, typedesc, message)
 
 def _main():
     """
@@ -140,6 +166,8 @@ def _main():
     """
     parser = argparse.ArgumentParser(description='Utility for processing ZX Spectrum files.')
     parser.add_argument('file', metavar='FILE', type=str, nargs=1, help='ZX Spectrum file to process (supports tzx only)')
+    parser.add_argument('--dump', action='store_true', help='Dump blocks to screen')
+    parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. Any other optons are ignored if this is selected.')
 
     args = parser.parse_args()
 
@@ -153,8 +181,10 @@ def _main():
 
     processor.process()
 
-    # This will be removed at some point but for now it helps development
-    processor.dump()
+    if args.list:
+        processor.summarize()
+    elif args.dump:
+        processor.dump()
 
 if __name__ == "__main__":
     _main()
