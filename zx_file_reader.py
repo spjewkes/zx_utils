@@ -64,6 +64,11 @@ class DataBlockAscii(Block):
     def dump(self):
         return self._text
 
+    @property
+    def typedesc(self):
+        # Override base class to add size of text
+        return "{} (size {} bytes)".format(super(DataBlockAscii, self).typedesc, len(self._text))
+
 class DataBlockBinary(Block):
     """
     Class for holding binary data blocks.
@@ -84,6 +89,11 @@ class DataBlockBinary(Block):
                 text += " "
             text += "0x{:02X}".format(ord(byte))
         return text
+
+    @property
+    def typedesc(self):
+        # Override base class to add size of text
+        return "{} (size {} bytes)".format(super(DataBlockBinary, self).typedesc, len(self._data))
 
 class TZXHandler(object):
     """
