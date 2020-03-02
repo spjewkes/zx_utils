@@ -9,9 +9,9 @@ def zxascii_encode(text):
 def zxascii_decode(bytes):
     return '', 0
 
-def custom_search_function(encoding_name):
+def zxascii_search_function(encoding_name):
     if encoding_name == 'zxascii':
-        return codecs.CodecInfo(zxascii_encode, zxxascii_decode, name='zxascii')
+        return codecs.CodecInfo(zxascii_encode, zxascii_decode, name='zxascii')
     return None
 
 

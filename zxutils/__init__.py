@@ -3,7 +3,7 @@
 
 import codecs
 
-from zxutils.zxcodec import custom_search_function
+from zxutils.zxcodec import zxascii_search_function
 
-codecs.register(custom_search_function)
+codecs.register(zxascii_search_function)
 

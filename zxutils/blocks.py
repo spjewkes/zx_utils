@@ -104,7 +104,6 @@ class TapeHeader(DataBlockBinary):
 
         block_desc = { 0: "Program", 1: "Number array", 2: "Character array", 3: "Code file" }
         self._flag, self._block_type, filename, self._length, self._param1, self._param2, self._checksum = struct.unpack_from('BB10sHHHB', self._data)
-        print(filename)
         self._filename = filename.decode('zxascii')
         self._block_desc = block_desc[self._block_type]
 
