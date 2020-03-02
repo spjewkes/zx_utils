@@ -90,7 +90,7 @@ class TZXHandler(object):
     def _process_text_description(self, blockid, typedesc):
         length = struct.unpack_from('B', self.data, self.pos)[0]
         self.pos += 1
-        message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('ascii')
+        message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('utf-8')
         self.pos += length
         return DataBlockAscii(blockid, typedesc, message)
 

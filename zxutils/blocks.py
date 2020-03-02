@@ -102,16 +102,20 @@ class TapeHeader(DataBlockBinary):
     def __init__(self, blockid, typedesc, data):
         super(TapeHeader, self).__init__(blockid, typedesc, data)
 
+        block_desc = { 0: "Program", 1: "Number array", 2: "Character array", 3: "Code file" }
+        self._flag, self._block_type, filename, self._length, self._param1, self._param2, self._checksum = struct.unpack_from('BB10sHHHB', self._data)
+        print(filename)
+        self._filename = filename.decode('zxascii')
+        self._block_desc = block_desc[self._block_type]
+
     @property
     def dump(self):
-        block_desc = { 0: "Program", 1: "Number array", 2: "Character array", 3: "Code file" }
-        flag, block_type, filename, length, param1, param2, checksum = struct.unpack_from('BB10sHHHB', self._data)
         desc = "Flag : 0x{:02X}\nBlock type : {}\nFilename : {}\nBlock length : {}\nParameter 1 : {}\nParameter 2 : {}\nChecksum : 0x{:02X}\n{}".format(
-            flag, block_desc[block_type], filename.decode('ascii'), length, param1, param2, checksum, super(TapeHeader, self).dump)
+            self._flag, self._block_desc, self._filename, self._length, self._param1, self._param2, self._checksum, super(TapeHeader, self).dump)
         return desc
 
     @property
     def typedesc(self):
         # Override base class to add note that this is a tape header
-        return "{} header".format(super(TapeHeader, self).typedesc)
+        return "{} header ({})".format(super(TapeHeader, self).typedesc, self._block_desc)
 
