@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import codecs
+import struct
 
 # Maps as many non-standard ascii values in the ZX Spectrum character map as possible.
 char_map = {
@@ -142,14 +143,32 @@ def zxascii_encode(text):
     raise AssetionError("\'zxascii\' codec does not support encoding")
     return b'', 0
 
-def zxascii_decode(_bytes):
+def zxascoo_decode_number(data):
+    number = 0
+    exponent = struct.unpack_from('B', data, 0)[0]
+    if exponent == 0:
+        # Special case - small number
+        sign, number = struct.unpack_from('BH', data, 1)
+        if sign == 0xff:
+            number *= -1
+    else:
+        exponent -=128
+        value = struct.unpack_from('<I', data, 1)
+        sign = bool(0x8000 & ~value)
+        number = 0x7fff & value
+        if sign:
+            number *= -1
+        number *= pow(2, exponent)
+    return str(number)
+
+def zxascii_decode(data):
     string = ""
     number_capture = None
-    for byte in _bytes:
+    for byte in data:
         if number_capture is not None:
             number_capture.append(byte)
             if len(number_capture) == 5:
-                # TODO - process number
+                string += zxascii_decode_number(number_capture)
                 number_capture = None
         elif byte == 0x0e:
             # Start of a number capture - the next 5 bytes represent a number
