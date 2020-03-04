@@ -18,7 +18,7 @@ class TZXHandler(object):
 
     @staticmethod
     def is_tzx(data):
-        tzx_header = struct.unpack_from('7s', data)
+        tzx_header = struct.unpack_from('=7s', data)
         if tzx_header[0] == b"ZXTape!":
             return True
         return False
@@ -35,7 +35,7 @@ class TZXHandler(object):
         self.blocks.append(header)
 
         while self.pos < len(self.data):
-            nextID = struct.unpack_from('B', self.data, self.pos)[0]
+            nextID = struct.unpack_from('=B', self.data, self.pos)[0]
             self.pos += 1
 
             if nextID == 0x10:
@@ -67,14 +67,14 @@ class TZXHandler(object):
                 print(block.dump)
 
     def _process_header(self, blockid, typedesc):
-        signature, end_of_text, major, minor = struct.unpack_from('7sBBB', self.data, self.pos)
+        signature, end_of_text, major, minor = struct.unpack_from('=7sBBB', self.data, self.pos)
         self.pos += 10
         return Header(blockid, typedesc, FileType.TZX, major, minor)
 
     def _process_standard_speed_data(self, blockid, typedesc):
-        pause, length = struct.unpack_from('HH', self.data, self.pos)
+        pause, length = struct.unpack_from('=HH', self.data, self.pos)
         self.pos += 4
-        data = b''.join(struct.unpack_from('{}c'.format(length), self.data, self.pos))
+        data = b''.join(struct.unpack_from('={}c'.format(length), self.data, self.pos))
         isHeader = True if length == 19 and data[0] == 0x00 else False
         self.pos += length
         if isHeader:
@@ -82,15 +82,15 @@ class TZXHandler(object):
         return DataBlockBinary(blockid, typedesc, data)
 
     def _process_pause_command(self, blockid, typedesc):
-        pause = struct.unpack_from('H', self.data, self.pos)[0]
+        pause = struct.unpack_from('=H', self.data, self.pos)[0]
         text = "Pause: {} ms".format(pause)
         self.pos += 2
         return DataBlockAscii(blockid, typedesc, text)
 
     def _process_text_description(self, blockid, typedesc):
-        length = struct.unpack_from('B', self.data, self.pos)[0]
+        length = struct.unpack_from('=B', self.data, self.pos)[0]
         self.pos += 1
-        message = struct.unpack_from('{}s'.format(length), self.data, self.pos)[0].decode('utf-8')
+        message = struct.unpack_from('={}s'.format(length), self.data, self.pos)[0].decode('utf-8')
         self.pos += length
         return DataBlockAscii(blockid, typedesc, message)
 

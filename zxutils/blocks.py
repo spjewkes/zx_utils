@@ -75,11 +75,13 @@ class DataBlockBinary(Block):
     """
     def __init__(self, blockid, typedesc, data):
         super(DataBlockBinary, self).__init__(blockid, typedesc)
-        self._data = data
+        self._flag = data[0]
+        self._data = data[1:-1]
+        self._checksum = data[-1]
 
     @property
     def dump(self):
-        text = ""
+        text = "Flag: 0x{:02X}\nChecksum: 0x{:02X}\n".format(self._flag, self._checksum)
         for i, byte in enumerate(self._data):
             if i % 16 == 0:
                 if i > 0:
@@ -103,7 +105,7 @@ class TapeHeader(DataBlockBinary):
         super(TapeHeader, self).__init__(blockid, typedesc, data)
 
         block_desc = { 0: "Program", 1: "Number array", 2: "Character array", 3: "Code file" }
-        self._flag, self._block_type, filename, self._length, self._param1, self._param2, self._checksum = struct.unpack_from('BB10sHHHB', self._data)
+        self._block_type, filename, self._length, self._param1, self._param2 = struct.unpack_from('=B10sHHH', self._data)
         self._filename = filename.decode('zxascii')
         self._block_desc = block_desc[self._block_type]
 

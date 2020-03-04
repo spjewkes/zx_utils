@@ -145,15 +145,15 @@ def zxascii_encode(text):
 
 def zxascoo_decode_number(data):
     number = 0
-    exponent = struct.unpack_from('B', data, 0)[0]
+    exponent = struct.unpack_from('=B', data, 0)[0]
     if exponent == 0:
         # Special case - small number
-        sign, number = struct.unpack_from('BH', data, 1)
+        sign, number = struct.unpack_from('=BH', data, 1)
         if sign == 0xff:
             number *= -1
     else:
         exponent -=128
-        value = struct.unpack_from('<I', data, 1)
+        value = struct.unpack_from('=<I', data, 1)
         sign = bool(0x8000 & ~value)
         number = 0x7fff & value
         if sign:
