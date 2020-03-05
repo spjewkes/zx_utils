@@ -97,6 +97,19 @@ class DataBlockBinary(Block):
         # Override base class to add size of text
         return "{} (size {} bytes)".format(super(DataBlockBinary, self).typedesc, len(self._data))
 
+class DataBlockProgram(DataBlockBinary):
+    """
+    Class for holding binary data block that contains program data.
+    """
+    def __init__(self, blockid, typedesc, data):
+        super(DataBlockProgram, self).__init__(blockid, typedesc, data)
+        
+    @property
+    def typedesc(self):
+        # Override base class to add size of text
+        return "{} (size {} bytes) (Program)".format(super(DataBlockBinary, self).typedesc, len(self._data))
+
+
 class TapeHeader(DataBlockBinary):
     """
     Class for managing a specialized binary data block that has been identified as a header block.
@@ -108,6 +121,10 @@ class TapeHeader(DataBlockBinary):
         self._block_type, filename, self._length, self._param1, self._param2 = struct.unpack_from('=B10sHHH', self._data)
         self._filename = filename.decode('zxascii')
         self._block_desc = block_desc[self._block_type]
+
+    @property
+    def is_program(self):
+        return True if self._block_type == 0 else False
 
     @property
     def dump(self):

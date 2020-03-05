@@ -3,7 +3,7 @@
 
 import struct
 
-from zxutils.blocks import FileType, Header, DataBlockAscii, DataBlockBinary, TapeHeader
+from zxutils.blocks import FileType, Header, DataBlockAscii, DataBlockBinary, DataBlockProgram, TapeHeader
 
 class TZXHandler(object):
     """
@@ -79,6 +79,12 @@ class TZXHandler(object):
         self.pos += length
         if isHeader:
             return TapeHeader(blockid, typedesc, data)
+
+        # If not header, query last block appended. If this is a header, then check what type
+        # of block this is.
+        if self.blocks and isinstance(self.blocks[-1], TapeHeader) and self.blocks[-1].is_program:
+            return DataBlockProgram(blockid, typedesc, data)
+
         return DataBlockBinary(blockid, typedesc, data)
 
     def _process_pause_command(self, blockid, typedesc):
