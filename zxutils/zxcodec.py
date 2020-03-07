@@ -6,6 +6,7 @@ import struct
 
 # Maps as many non-standard ascii values in the ZX Spectrum character map as possible.
 char_map = {
+    13: "\n", # Enter key
     94: u"\u2191", # Up-arrow (caret)
     96: u"\u00a3", # Pound sign
     127: u"\u00a9", # Copyright sign
@@ -199,8 +200,9 @@ def zxbasic_decode(data):
     while pos < len(data):
         line_num, text_length = struct.unpack_from('=HH', data, pos)
         pos += 4
-        string += "{} {}\n".format(line_num, zx_decode_basic_string(data[pos:pos+text_length]))
+        string += "{} {}\n".format(line_num, zx_decode_basic_string(data[pos:pos+text_length]).rstrip())
         pos += text_length
+    string = string.rstrip()
     return string, len(string)
 
 def zxascii_search_function(encoding_name):
