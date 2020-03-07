@@ -6,25 +6,25 @@ import struct
 
 # Maps as many non-standard ascii values in the ZX Spectrum character map as possible.
 char_map = {
-    94: u"\u2191".encode('utf-8'), # Up-arrow (caret)
-    96: u"\u00a3".encode('utf-8'), # Pound sign
-    127: u"\u00a9".encode('utf-8'), # Copyright sign
-    128: u" ".encode('utf-8'),
-    129: u"\u259d".encode('utf-8'),
-    130: u"\u2598".encode('utf-8'),
-    131: u"\u2580".encode('utf-8'),
-    132: u"\u2597".encode('utf-8'),
-    133: u"\u2590".encode('utf-8'),
-    134: u"\u259a".encode('utf-8'),
-    135: u"\u259c".encode('utf-8'),
-    136: u"\u2596".encode('utf-8'),
-    137: u"\u259e".encode('utf-8'),
-    138: u"\u258c".encode('utf-8'),
-    139: u"\u259b".encode('utf-8'),
-    140: u"\u2584".encode('utf-8'),
-    141: u"\u259f".encode('utf-8'),
-    142: u"\u2599".encode('utf-8'),
-    143: u"\u2588".encode('utf-8'),
+    94: u"\u2191", # Up-arrow (caret)
+    96: u"\u00a3", # Pound sign
+    127: u"\u00a9", # Copyright sign
+    128: u" ",
+    129: u"\u259d",
+    130: u"\u2598",
+    131: u"\u2580",
+    132: u"\u2597",
+    133: u"\u2590",
+    134: u"\u259a",
+    135: u"\u259c",
+    136: u"\u2596",
+    137: u"\u259e",
+    138: u"\u258c",
+    139: u"\u259b",
+    140: u"\u2584",
+    141: u"\u259f",
+    142: u"\u2599",
+    143: u"\u2588",
     144: "<UDG A>",
     145: "<UDG B>",
     146: "<UDG C>",
@@ -139,11 +139,9 @@ char_map = {
     255: "COPY "
 }
 
-def zxascii_encode(text):
-    raise AssetionError("\'zxascii\' codec does not support encoding")
-    return b'', 0
-
-def zxascoo_decode_number(data):
+def zx_decode_number(data):
+    if len(data) != 5:
+        raise AssertionError("ZX number expects a length of 5 not {}".format(len(data)))
     number = 0
     exponent = struct.unpack_from('=B', data, 0)[0]
     if exponent == 0:
@@ -161,18 +159,19 @@ def zxascoo_decode_number(data):
         number *= pow(2, exponent)
     return str(number)
 
-def zxascii_decode(data):
+def zx_decode_basic_string(data):
     string = ""
     number_capture = None
     for byte in data:
         if number_capture is not None:
             number_capture.append(byte)
             if len(number_capture) == 5:
-                string += zxascii_decode_number(number_capture)
+                # Numbers seem to be encoded as text and like this so ignore for now
+                # string += zx_decode_number(number_capture)
                 number_capture = None
         elif byte == 0x0e:
             # Start of a number capture - the next 5 bytes represent a number
-            number_capture = list()
+            number_capture = bytearray()
         elif byte in char_map.keys():
             string += char_map[byte]
         elif byte >= 32 and byte <= 126:
@@ -180,11 +179,35 @@ def zxascii_decode(data):
         else:
             string += "!0x{:02x}! ".format(byte)
 
+    return string
+
+def zxascii_encode(text):
+    raise AssetionError("\'zxascii\' codec does not support encoding")
+    return b'', 0
+
+def zxascii_decode(data):
+    string = zx_decode_basic_string(data)
+    return string, len(string)
+
+def zxbasic_encode(text):
+    raise AssetionError("\'zxbasic\' codec does not support encoding")
+    return b'', 0
+
+def zxbasic_decode(data):
+    string = ""
+    pos = 0
+    while pos < len(data):
+        line_num, text_length = struct.unpack_from('=HH', data, pos)
+        pos += 4
+        string += "{} {}\n".format(line_num, zx_decode_basic_string(data[pos:pos+text_length]))
+        pos += text_length
     return string, len(string)
 
 def zxascii_search_function(encoding_name):
     if encoding_name == 'zxascii':
         return codecs.CodecInfo(zxascii_encode, zxascii_decode, name='zxascii')
+    elif encoding_name == 'zxbasic':
+        return codecs.CodecInfo(zxbasic_encode, zxbasic_decode, name='zxbasic')
     return None
 
 

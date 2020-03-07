@@ -103,12 +103,16 @@ class DataBlockProgram(DataBlockBinary):
     """
     def __init__(self, blockid, typedesc, data):
         super(DataBlockProgram, self).__init__(blockid, typedesc, data)
-        
+        self._program = self._data.decode('zxbasic')
+
     @property
     def typedesc(self):
         # Override base class to add size of text
         return "{} (size {} bytes) (Program)".format(super(DataBlockBinary, self).typedesc, len(self._data))
 
+    @property
+    def dump(self):
+        return self._program
 
 class TapeHeader(DataBlockBinary):
     """
