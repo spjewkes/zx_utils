@@ -198,8 +198,10 @@ def zxbasic_decode(data):
     string = ""
     pos = 0
     while pos < len(data):
-        line_num, text_length = struct.unpack_from('=HH', data, pos)
-        pos += 4
+        line_num = struct.unpack_from('>H', data, pos)[0]
+        pos += 2
+        text_length = struct.unpack_from('<H', data, pos)[0]
+        pos += 2
         string += "{} {}\n".format(line_num, zx_decode_basic_string(data[pos:pos+text_length]).rstrip())
         pos += text_length
     string = string.rstrip()
