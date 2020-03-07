@@ -17,7 +17,7 @@ class TZXHandler(object):
     major_ver, minor_ver = 1, 20
 
     @staticmethod
-    def is_tzx(data):
+    def is_tzx(filename, data):
         tzx_header = struct.unpack_from('=7s', data)
         if tzx_header[0] == b"ZXTape!":
             return True
