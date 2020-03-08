@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+"""
+ZX Tool script for managing ZX Spectrum files.
+"""
 import argparse
 import zipfile
 
@@ -13,12 +15,13 @@ def _main():
     parser = argparse.ArgumentParser(description='Utility for processing ZX Spectrum files.')
     parser.add_argument('file', metavar='FILE', type=str, help='ZX Spectrum file to process (supports tzx only).')
     parser.add_argument('--dump', action='store_true', help='Dump blocks to screen.')
-    parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. Any other optons are ignored if this is selected.')
+    parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. '
+                        'Any other optons are ignored if this is selected.')
     parser.add_argument('--block', metavar='BLOCKID', type=int, help='Process a specific block ID.')
 
     args = parser.parse_args()
 
-    if (zipfile.is_zipfile(args.file)):
+    if zipfile.is_zipfile(args.file):
         with zipfile.ZipFile(args.file) as zipf:
             # For now get first file in zip - this will need improving at some point
             with zipf.open(zipf.namelist()[0], "r") as f:

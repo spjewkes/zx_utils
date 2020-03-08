@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Creates custom text string codecs for handling ZX Spectrum strings.
+"""
+
 import codecs
 import struct
 
 # Maps as many non-standard ascii values in the ZX Spectrum character map as possible.
-char_map = {
+ZX_CHAR_MAP = {
     13: "\n", # Enter key
     94: u"\u2191", # Up-arrow (caret)
     96: u"\u00a3", # Pound sign
@@ -141,6 +145,9 @@ char_map = {
 }
 
 def zx_decode_number(data):
+    """
+    Decode a binary string into a ZX Spectrum number (as defined in the ROM routine).
+    """
     if len(data) != 5:
         raise AssertionError("ZX number expects a length of 5 not {}".format(len(data)))
     number = 0
@@ -151,7 +158,7 @@ def zx_decode_number(data):
         if sign == 0xff:
             number *= -1
     else:
-        exponent -=128
+        exponent -= 128
         value = struct.unpack_from('=<I', data, 1)
         sign = bool(0x8000 & ~value)
         number = 0x7fff & value
@@ -161,6 +168,9 @@ def zx_decode_number(data):
     return str(number)
 
 def zx_decode_basic_string(data):
+    """
+    Decode a binary string into a ZX Spectrum Basic string.
+    """
     string = ""
     number_capture = None
     for byte in data:
@@ -173,8 +183,8 @@ def zx_decode_basic_string(data):
         elif byte == 0x0e:
             # Start of a number capture - the next 5 bytes represent a number
             number_capture = bytearray()
-        elif byte in char_map.keys():
-            string += char_map[byte]
+        elif byte in ZX_CHAR_MAP.keys():
+            string += ZX_CHAR_MAP[byte]
         elif byte >= 32 and byte <= 126:
             string += chr(byte)
         else:
@@ -183,18 +193,28 @@ def zx_decode_basic_string(data):
     return string
 
 def zxascii_encode(text):
-    raise AssetionError("\'zxascii\' codec does not support encoding")
-    return b'', 0
+    """
+    Encode a ZX Spectrum ASCII string from text (not implemented).
+    """
+    raise AssertionError("\'zxascii\' codec does not support encoding")
 
 def zxascii_decode(data):
+    """
+    Decode a binary string containing ZX Spectrum text into ASCII.
+    """
     string = zx_decode_basic_string(data)
     return string, len(string)
 
 def zxbasic_encode(text):
-    raise AssetionError("\'zxbasic\' codec does not support encoding")
-    return b'', 0
+    """
+    Encode a ZX Spectrum Basic string from text (not implemented).
+    """
+    raise AssertionError("\'zxbasic\' codec does not support encoding")
 
 def zxbasic_decode(data):
+    """
+    Decode a binary string containing ZX Spectrum Basic code into ASCII.
+    """
     string = ""
     pos = 0
     while pos < len(data):
@@ -208,10 +228,11 @@ def zxbasic_decode(data):
     return string, len(string)
 
 def zxascii_search_function(encoding_name):
+    """
+    The search function to check if the encoding name can be handled by one of our ZX Spectrum codecs.
+    """
     if encoding_name == 'zxascii':
         return codecs.CodecInfo(zxascii_encode, zxascii_decode, name='zxascii')
     elif encoding_name == 'zxbasic':
         return codecs.CodecInfo(zxbasic_encode, zxbasic_decode, name='zxbasic')
     return None
-
-

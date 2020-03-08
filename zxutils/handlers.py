@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Contains all the ZX file handler classes.
+"""
 
 import struct
 import os
 
-from zxutils.blocks import FileType, Header, DataBlockAscii, DataBlockArchive, DataBlockBinary, DataBlockProgram, TapeHeader
+from zxutils.blocks import Header, DataBlockAscii, DataBlockArchive, DataBlockBinary, DataBlockProgram, TapeHeader
 
-class Handler(object):
+class Handler:
     """
     Base class for handling a file format
     """
@@ -17,6 +20,9 @@ class Handler(object):
 
     @staticmethod
     def can_handle(filename, data):
+        """
+        Returns True if this handler can deal with this file.
+        """
         return False
 
     def process(self):
@@ -31,7 +37,7 @@ class Handler(object):
         """
         pass
 
-    def dump(self, block=None):
+    def dump(self, block_idx=None):
         """
         Dump content of blocks to stdout (or a single block).
         """
@@ -48,6 +54,9 @@ class TZXHandler(Handler):
 
     @staticmethod
     def can_handle(filename, data):
+        """
+        Returns True if this handler can deal with this file.
+        """
         tzx_header = struct.unpack_from('=7s', data)
         if tzx_header[0] == b"ZXTape!":
             return True
@@ -60,24 +69,25 @@ class TZXHandler(Handler):
         header = self._process_header(None, "Header")
         major, minor = header.version
         if major > TZXHandler.major_ver or minor > TZXHandler.minor_ver:
-            raise RuntimeError("This script only supports TZX files up to version {}.{:02d}".format(TZXHandler.major_ver, TZXHandler.minor_ver))
+            raise RuntimeError("This script only supports TZX files up to version {}.{:02d}".
+                               format(TZXHandler.major_ver, TZXHandler.minor_ver))
 
         self.blocks.append(header)
 
         while self.pos < len(self.data):
-            nextID = struct.unpack_from('=B', self.data, self.pos)[0]
+            next_id = struct.unpack_from('=B', self.data, self.pos)[0]
             self.pos += 1
 
-            if nextID == 0x10:
-                block = self._process_standard_speed_data(nextID, "Standard Speed Data Block")
-            elif nextID == 0x20:
-                block = self._process_pause_command(nextID, "Pause Command")
-            elif nextID == 0x30:
-                block = self._process_text_description(nextID, "Text Description")
-            elif nextID == 0x32:
-                block = self._process_archive_info(nextID, "Archive Info")
+            if next_id == 0x10:
+                block = self._process_standard_speed_data(next_id, "Standard Speed Data Block")
+            elif next_id == 0x20:
+                block = self._process_pause_command(next_id, "Pause Command")
+            elif next_id == 0x30:
+                block = self._process_text_description(next_id, "Text Description")
+            elif next_id == 0x32:
+                block = self._process_archive_info(next_id, "Archive Info")
             else:
-                print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(nextID))
+                print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(next_id))
                 break
 
             self.blocks.append(block)
@@ -89,27 +99,29 @@ class TZXHandler(Handler):
         for i, block in enumerate(self.blocks):
             print("Block: {:4d} ({}) - {}".format(i, block.idstr, block.typedesc))
 
-    def dump(self, blockid=None):
+    def dump(self, block_idx=None):
         """
         Output to stdout, the content of each block.
         """
         for i, block in enumerate(self.blocks):
-            if i == blockid or blockid is None:
+            if i == block_idx or block_idx is None:
                 print("Block: {:4d} ({})".format(i, block.idstr))
                 print(block.dump)
 
     def _process_header(self, blockid, typedesc):
         signature, end_of_text, major, minor = struct.unpack_from('=7sBBB', self.data, self.pos)
+        if signature != b"ZXTape!" or end_of_text != 0x1A:
+            raise AssertionError("File is not a valid TZX file.")
         self.pos += 10
-        return Header(blockid, typedesc, FileType.TZX, major, minor)
+        return Header(blockid, typedesc, major, minor)
 
     def _process_standard_speed_data(self, blockid, typedesc):
         pause, length = struct.unpack_from('=HH', self.data, self.pos)
         self.pos += 4
         data = b''.join(struct.unpack_from('={}c'.format(length), self.data, self.pos))
-        isHeader = True if length == 19 and data[0] == 0x00 else False
+        is_header = bool(length == 19 and data[0] == 0x00)
         self.pos += length
-        if isHeader:
+        if is_header:
             return TapeHeader(blockid, typedesc, data)
 
         # If not header, query last block appended. If this is a header, then check what type
@@ -136,7 +148,7 @@ class TZXHandler(Handler):
         length, num_strings = struct.unpack_from('=HB', self.data, self.pos)
         self.pos += 3
         descriptions = list()
-        for i in range(num_strings):
+        for _ in range(num_strings):
             type_str, length_str = struct.unpack_from('=BB', self.data, self.pos)
             self.pos += 2
             text_str = struct.unpack_from('={}s'.format(length_str), self.data, self.pos)[0].decode('zxascii')
@@ -155,7 +167,10 @@ class TAPHandler(Handler):
 
     @staticmethod
     def can_handle(filename, data):
-        root, ext = os.path.splitext(filename)
+        """
+        Returns True if this handler can deal with this file.
+        """
+        _, ext = os.path.splitext(filename)
         if os.path.isfile(filename) and ext.lower() == ".tap":
             return True
         return False
@@ -166,7 +181,7 @@ class TAPHandler(Handler):
         """
         while self.pos < len(self.data):
             length = struct.unpack_from('<H', self.data, self.pos)[0]
-            self.pos +=2
+            self.pos += 2
 
             block = self._process_block(length)
 
@@ -179,21 +194,21 @@ class TAPHandler(Handler):
         for i, block in enumerate(self.blocks):
             print("Block: {:4d} ({}) - {}".format(i, block.idstr, block.typedesc))
 
-    def dump(self, blockid=None):
+    def dump(self, block_idx=None):
         """
         Output to stdout, the content of each block.
         """
         for i, block in enumerate(self.blocks):
-            if i == blockid or blockid is None:
+            if i == block_idx or block_idx is None:
                 print("Block: {:4d} ({})".format(i, block.idstr))
                 print(block.dump)
 
     def _process_block(self, length):
         typedesc = "Data Block"
         data = b''.join(struct.unpack_from('={}c'.format(length), self.data, self.pos))
-        isHeader = True if length == 19 and data[0] == 0x00 else False
+        is_header = bool(length == 19 and data[0] == 0x00)
         self.pos += length
-        if isHeader:
+        if is_header:
             return TapeHeader(None, typedesc, data)
 
         # If not header, query last block appended. If this is a header, then check what type
@@ -202,4 +217,3 @@ class TAPHandler(Handler):
             return DataBlockProgram(None, typedesc, data)
 
         return DataBlockBinary(None, typedesc, data)
-
