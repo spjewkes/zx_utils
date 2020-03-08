@@ -69,6 +69,24 @@ class DataBlockAscii(Block):
         # Override base class to add size of text
         return "{} (size {} bytes)".format(super(DataBlockAscii, self).typedesc, len(self._text))
 
+class DataBlockArchive(Block):
+    """
+    Class for holding archive description block.
+    """
+    def __init__(self, blockid, typedesc, descriptions):
+        super(DataBlockArchive, self).__init__(blockid, typedesc)
+        self._messages = descriptions
+
+    @property
+    def dump(self):
+        typedesc = { 0x0: "Full title", 0x1: "Software house/publisher", 0x2: "Author(s)", 0x3: "Year of publication",
+                     0x4: "Language", 0x5: "Game/utility type", 0x6: "Price", 0x7: "Protection scheme/loader",
+                     0x8: "Origin", 0xff: "Comment(s)" }
+        text = ""
+        for typeid, message in self._messages:
+            text += "{}: {}\n".format(typedesc[typeid], message)
+        return text.rstrip()
+
 class DataBlockBinary(Block):
     """
     Class for holding binary data blocks.

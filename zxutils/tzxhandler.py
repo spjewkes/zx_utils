@@ -3,7 +3,7 @@
 
 import struct
 
-from zxutils.blocks import FileType, Header, DataBlockAscii, DataBlockBinary, DataBlockProgram, TapeHeader
+from zxutils.blocks import FileType, Header, DataBlockAscii, DataBlockArchive, DataBlockBinary, DataBlockProgram, TapeHeader
 
 class TZXHandler(object):
     """
@@ -44,6 +44,8 @@ class TZXHandler(object):
                 block = self._process_pause_command(nextID, "Pause Command")
             elif nextID == 0x30:
                 block = self._process_text_description(nextID, "Text Description")
+            elif nextID == 0x32:
+                block = self._process_archive_info(nextID, "Archive Info")
             else:
                 print("WARNING:Early exit because of unsupported ID: 0x{:02X}".format(nextID))
                 break
@@ -100,3 +102,14 @@ class TZXHandler(object):
         self.pos += length
         return DataBlockAscii(blockid, typedesc, message)
 
+    def _process_archive_info(self, blockid, typedesc):
+        length, num_strings = struct.unpack_from('=HB', self.data, self.pos)
+        self.pos += 3
+        descriptions = list()
+        for i in range(num_strings):
+            type_str, length_str = struct.unpack_from('=BB', self.data, self.pos)
+            self.pos += 2
+            text_str = struct.unpack_from('={}s'.format(length_str), self.data, self.pos)[0].decode('zxascii')
+            self.pos += length_str
+            descriptions.append((type_str, text_str))
+        return DataBlockArchive(blockid, typedesc, descriptions)
