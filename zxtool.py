@@ -4,8 +4,7 @@
 import argparse
 import zipfile
 
-from zxutils.tzxhandler import TZXHandler
-from zxutils.taphandler import TAPHandler
+from zxutils.handlers import TZXHandler, TAPHandler
 
 def _main():
     """
@@ -28,9 +27,9 @@ def _main():
         with open(args.file, "rb") as f:
             data = f.read()
 
-    if TZXHandler.is_tzx(args.file, data):
+    if TZXHandler.can_handle(args.file, data):
         processor = TZXHandler(data)
-    elif TAPHandler.is_tap(args.file, data):
+    elif TAPHandler.can_handle(args.file, data):
         processor = TAPHandler(data)
     else:
         raise RuntimeError("The {} file appears to be an unsupported type.".format(args.file))
