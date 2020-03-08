@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import zipfile
 
 from zxutils.tzxhandler import TZXHandler
 from zxutils.taphandler import TAPHandler
@@ -18,15 +19,21 @@ def _main():
 
     args = parser.parse_args()
 
-    with open(args.file, "rb") as f:
-        data = f.read()
+    if (zipfile.is_zipfile(args.file)):
+        with zipfile.ZipFile(args.file) as zipf:
+            # For now get first file in zip - this will need improving at some point
+            with zipf.open(zipf.namelist()[0], "r") as f:
+                data = f.read()
+    else:
+        with open(args.file, "rb") as f:
+            data = f.read()
 
-        if TZXHandler.is_tzx(args.file, data):
-            processor = TZXHandler(data)
-        elif TAPHandler.is_tap(args.file, data):
-            processor = TAPHandler(data)
-        else:
-            raise RuntimeError("The {} file appears to be an unsupported type.".format(args.file))
+    if TZXHandler.is_tzx(args.file, data):
+        processor = TZXHandler(data)
+    elif TAPHandler.is_tap(args.file, data):
+        processor = TAPHandler(data)
+    else:
+        raise RuntimeError("The {} file appears to be an unsupported type.".format(args.file))
 
     processor.process()
 
