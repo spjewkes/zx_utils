@@ -2,4 +2,4 @@
 
 Repository for creating utilities for the ZX Spectrum.
 
-* tap_reader.py - outputs all the blocks in a TAP file. It will try and decode BASIC blocks. This is currently very WIP.
+* zxtool.py - allows listing of blocks in a TAP/TZX file (or ZIP file containing one of these types). It will try and decode BASIC blocks too. It can dump all or just a single block.

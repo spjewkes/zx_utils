@@ -13,7 +13,7 @@ def _main():
     Application entrypoint when executing the script directly.
     """
     parser = argparse.ArgumentParser(description='Utility for processing ZX Spectrum files.')
-    parser.add_argument('file', metavar='FILE', type=str, help='ZX Spectrum file to process (supports tzx only).')
+    parser.add_argument('file', metavar='FILE', type=str, help='ZX Spectrum file to process (supports TZX/TAP/ZIP only).')
     parser.add_argument('--dump', action='store_true', help='Dump blocks to screen.')
     parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. '
                         'Any other optons are ignored if this is selected.')
