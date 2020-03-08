@@ -214,13 +214,14 @@ def dump_basic(data, length):
             char = ord(data[offset+text_pos])
             if char is 0xe:
                 # Special case - number and next five bytes are the number itself
+                dump_data(data[offset+text_pos:], 6)
                 text_pos += 5
             elif char in char_map.keys():
                 sys.stdout.write("{}".format(char_map[char]))
             elif char >= 32 and char <= 126:
                 sys.stdout.write(chr(char))
             else:
-                sys.stdout.write("0x{:02x} ".format(char))
+                sys.stdout.write("!0x{:02x}! ".format(char))
             text_pos += 1
 
         print
