@@ -80,6 +80,8 @@ class TZXHandler(Handler):
 
             if next_id == 0x10:
                 block = self._process_standard_speed_data(next_id, "Standard Speed Data Block")
+            elif next_id == 0x11:
+                block = self._process_turbo_speed_data(next_id, "Turbo Speed Data Block")
             elif next_id == 0x20:
                 block = self._process_pause_command(next_id, "Pause Command")
             elif next_id == 0x30:
@@ -118,6 +120,25 @@ class TZXHandler(Handler):
     def _process_standard_speed_data(self, blockid, typedesc):
         pause, length = struct.unpack_from('=HH', self.data, self.pos)
         self.pos += 4
+        data = b''.join(struct.unpack_from('={}c'.format(length), self.data, self.pos))
+        is_header = bool(length == 19 and data[0] == 0x00)
+        self.pos += length
+        if is_header:
+            return TapeHeader(blockid, typedesc, data)
+
+        # If not header, query last block appended. If this is a header, then check what type
+        # of block this is.
+        if self.blocks and isinstance(self.blocks[-1], TapeHeader) and self.blocks[-1].is_program:
+            return DataBlockProgram(blockid, typedesc, data)
+
+        return DataBlockBinary(blockid, typedesc, data)
+
+    def _process_turbo_speed_data(self, blockid, typedesc):
+        pilot, sync1, sync2, zero, one, pilot_tone, used_bits, pause = struct.unpack_from('=HHHHHHBH', self.data, self.pos)
+        self.pos += 15
+        length_bytes = b''.join(struct.unpack_from('=3s', self.data, self.pos))
+        self.pos += 3
+        length = int.from_bytes(length_bytes, byteorder='little')
         data = b''.join(struct.unpack_from('={}c'.format(length), self.data, self.pos))
         is_header = bool(length == 19 and data[0] == 0x00)
         self.pos += length
