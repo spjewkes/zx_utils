@@ -18,6 +18,8 @@ def _main():
     parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. '
                         'Any other optons are ignored if this is selected.')
     parser.add_argument('--block', metavar='BLOCKID', type=int, help='Process a specific block ID.')
+    parser.add_argument('--pngify',metavar='FILE_PREFIX', type=str, help='Attempts to decode binary blob as ZX Spextrum string. '
+                        'Only works with binary files exactly 6912 bytes in length.')
 
     args = parser.parse_args()
 
@@ -44,5 +46,8 @@ def _main():
     elif args.dump:
         processor.dump(args.block)
 
+    if args.pngify:
+        processor.decode_to_png(args.pngify, args.block)
+        
 if __name__ == "__main__":
     _main()

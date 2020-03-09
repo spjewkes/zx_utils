@@ -136,6 +136,13 @@ class DataBlockBinary(Block):
         # Override base class to add size of text
         return "{} (size {} bytes)".format(super(DataBlockBinary, self).typedesc, len(self._data))
 
+    @property
+    def data(self):
+        """
+        Returns the binary data of this block.
+        """
+        return self._data
+
 class DataBlockProgram(DataBlockBinary):
     """
     Class for holding binary data block that contains program data.

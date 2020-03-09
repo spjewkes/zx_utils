@@ -8,6 +8,7 @@ import struct
 import os
 
 from zxutils.blocks import Header, DataBlockAscii, DataBlockArchive, DataBlockBinary, DataBlockProgram, TapeHeader
+from zxutils.utils import write_zxscr_to_png
 
 class Handler:
     """
@@ -42,6 +43,14 @@ class Handler:
         Dump content of blocks to stdout (or a single block).
         """
         pass
+
+    def decode_to_png(self, file_prefix, block_idx):
+        for i, block in enumerate(self.blocks):
+            if i == block_idx or block_idx is None:
+                block = self.blocks[i]
+                if isinstance(block, DataBlockBinary) and len(block.data) == 6912:
+                    filename = "{}_{:03d}.png".format(file_prefix, i)
+                    write_zxscr_to_png(filename, self.blocks[i])
 
 class TZXHandler(Handler):
     """
