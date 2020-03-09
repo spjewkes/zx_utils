@@ -50,7 +50,7 @@ class Handler:
                 block = self.blocks[i]
                 if isinstance(block, DataBlockBinary) and len(block.data) == 6912:
                     filename = "{}_{:03d}.png".format(file_prefix, i)
-                    write_zxscr_to_png(filename, self.blocks[i])
+                    write_zxscr_to_png(filename, block.data)
 
 class TZXHandler(Handler):
     """
