@@ -75,7 +75,9 @@ class Handler:
         for i, block in enumerate(self.blocks):
             if i == block_idx or block_idx is None:
                 block = self.blocks[i]
-                if isinstance(block, DataBlockBinary) and len(block.data) == 6912:
+                length = len(block.data)
+                if isinstance(block, DataBlockBinary) and length >= 6912 and length <= 7168:
+                    # Add some wiggle room to the length in case some the image goes over
                     filename = "{}_{:03d}.png".format(file_prefix, i)
                     write_zxscr_to_png(filename, block.data)
 
