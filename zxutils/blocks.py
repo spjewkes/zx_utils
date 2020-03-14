@@ -199,8 +199,10 @@ class TapeHeader(DataBlockBinary):
         """
         Return a printable dump string to display on stdout.
         """
-        desc = "Flag : 0x{:02X}\nBlock type : {}\nFilename : {}\nBlock length : {}\nParameter 1 : {}\n" \
-            "Parameter 2 : {}\nChecksum : 0x{:02X}\n{}".format(
-                self._flag, self._block_desc, self._filename, self._length, self._param1,
-                self._param2, self._checksum, super(TapeHeader, self).dump)
+        param_desc = { 0: (" (Autostart line number)", " (Variable area offset)"), 1: ("", ""), 2: ("", ""), 3: (" (Start of code block)", "") }
+        param1_desc, param2_desc = param_desc[self._block_type]
+        desc = "Flag : 0x{:02X}\nBlock type : {}\nFilename : {}\nBlock length : {}\nParameter 1 : {}{}\n" \
+            "Parameter 2 : {}{}\nChecksum : 0x{:02X}\n{}".format(
+                self._flag, self._block_desc, self._filename, self._length, self._param1, param1_desc,
+                self._param2, param2_desc, self._checksum, super(TapeHeader, self).dump)
         return desc
