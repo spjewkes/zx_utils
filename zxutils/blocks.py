@@ -187,6 +187,20 @@ class TapeHeader(DataBlockBinary):
         return bool(self._block_type == 0)
 
     @property
+    def is_code(self):
+        """
+        Does this header block represent a code block?
+        """
+        return bool(self._block_type == 3)
+
+    @property
+    def parameter1(self):
+        """
+        Returns the first parameter of this header
+        """
+        return self._param1
+
+    @property
     def typedesc(self):
         """
         The type description.

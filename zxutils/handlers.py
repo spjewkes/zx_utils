@@ -72,15 +72,16 @@ class Handler:
         """
         Try to interpret binary as image data if it is the right size.
         """
+        last_header = None
         for i, block in enumerate(self.blocks):
             if i == block_idx or block_idx is None:
                 block = self.blocks[i]
                 length = len(block.data)
-                if isinstance(block, DataBlockBinary) and length >= 6912 and length <= 7168:
-                    # Add some wiggle room to the length in case some the image goes over
+                if last_header and last_header.is_code and last_header.parameter1 == 16384 and length >= 6912:
                     filename = "{}_{:03d}.png".format(file_prefix, i)
                     write_zxscr_to_png(filename, block.data)
-
+                if isinstance(block, TapeHeader):
+                    last_header = block
 class TZXHandler(Handler):
     """
     Class for handling the processing of TZX files.
