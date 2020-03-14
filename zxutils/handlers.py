@@ -50,9 +50,11 @@ class Handler:
         """
         for i, block in enumerate(self.blocks):
             if i == block_idx or block_idx is None:
-                filename = "{}_{:03d}.bin".format(file_prefix, i)
-                with open(filename, "wb") as file_bin:
-                    file_bin.write(self.blocks[i])
+                block = self.blocks[i]
+                if isinstance(block, DataBlockBinary):
+                    filename = "{}_{:03d}.bin".format(file_prefix, i)
+                    with open(filename, "wb") as file_bin:
+                        file_bin.write(block.data)
 
     def decode_to_txt(self, file_prefix, block_idx=None):
         """

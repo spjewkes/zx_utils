@@ -57,8 +57,7 @@ def _main():
             elif t == 'txt':
                 processor.decode_to_txt(args.prefix, args.block)
             elif t == 'bin':
-                # processor.decode_to_bin(args.prefix, args.block)
-                raise RuntimeError("This functionality is not yet implemented")
+                processor.decode_to_bin(args.prefix, args.block)
         
 if __name__ == "__main__":
     _main()
