@@ -20,8 +20,9 @@ def _main():
     parser.add_argument('--list', action='store_true', help='Output list of blocks to screen. '
                         'Any other optons are ignored if this is selected.')
     parser.add_argument('--block', metavar='BLOCKID', type=int, help='Process a specific block ID.')
-    parser.add_argument('--pngify',metavar='FILE_PREFIX', type=str, help='Attempts to decode binary blob as ZX Spextrum string. '
-                        'Only works with binary files exactly 6912 bytes in length.')
+    parser.add_argument('--prefix', metavar='FILE_PREFIX', type=str, default='block', help='File prefix to use when writing out blocks')
+    parser.add_argument('--extract', metavar='LIST', type=str, help='Comma separated list of types to extract from block(s). '
+                        'Valid types are: png, txt and bin (e.g --extract png,txt).')
 
     args = parser.parse_args()
 
@@ -48,8 +49,16 @@ def _main():
     elif args.dump:
         processor.dump(args.block)
 
-    if args.pngify:
-        processor.decode_to_png(args.pngify, args.block)
+    if args.extract:
+        types = [x.strip() for x in args.extract.split(",")]
+        for t in types:
+            if t == 'png':
+                processor.decode_to_png(args.prefix, args.block)
+            elif t == 'txt':
+                processor.decode_to_txt(args.prefix, args.block)
+            elif t == 'bin':
+                # processor.decode_to_bin(args.prefix, args.block)
+                raise RuntimeError("This functionality is not yet implemented")
         
 if __name__ == "__main__":
     _main()

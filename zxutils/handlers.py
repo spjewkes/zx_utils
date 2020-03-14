@@ -44,7 +44,32 @@ class Handler:
         """
         pass
 
-    def decode_to_png(self, file_prefix, block_idx):
+    def decode_to_bin(self, file_prefix, block_idx=None):
+        """
+        Write binary data to file.
+        """
+        for i, block in enumerate(self.blocks):
+            if i == block_idx or block_idx is None:
+                filename = "{}_{:03d}.bin".format(file_prefix, i)
+                with open(filename, "wb") as file_bin:
+                    file_bin.write(self.blocks[i])
+
+    def decode_to_txt(self, file_prefix, block_idx=None):
+        """
+        Write data to file as text. Only certain classes can do this.
+        """
+        for i, block in enumerate(self.blocks):
+            if i == block_idx or block_idx is None:
+                block = self.blocks[i]
+                if isinstance(block, (DataBlockAscii, DataBlockArchive, DataBlockProgram)):
+                    filename = "{}_{:03d}.txt".format(file_prefix, i)
+                    with open(filename, "w") as file_txt:
+                        file_txt.write(block.dump)
+
+    def decode_to_png(self, file_prefix, block_idx=None):
+        """
+        Try to interpret binary as image data if it is the right size.
+        """
         for i, block in enumerate(self.blocks):
             if i == block_idx or block_idx is None:
                 block = self.blocks[i]
