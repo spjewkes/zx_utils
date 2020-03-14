@@ -70,7 +70,7 @@ class Handler:
 
     def decode_to_png(self, file_prefix, block_idx=None):
         """
-        Try to interpret binary as image data if it is the right size.
+        Try to interpret binary as image data if it is data written to the screen memory.
         """
         last_header = None
         for i, block in enumerate(self.blocks):
