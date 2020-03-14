@@ -3,7 +3,7 @@
 """
 ZX Tool script for managing ZX Spectrum files.
 """
-__version__ = 0.5
+__version__ = 1.0
 
 import argparse
 import zipfile
