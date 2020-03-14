@@ -80,6 +80,7 @@ class Handler:
                 if last_header and last_header.is_code and last_header.parameter1 == 16384 and length >= 6912:
                     filename = "{}_{:03d}.png".format(file_prefix, i)
                     write_zxscr_to_png(filename, block.data)
+                    last_header = None
                 if isinstance(block, TapeHeader):
                     last_header = block
 class TZXHandler(Handler):
