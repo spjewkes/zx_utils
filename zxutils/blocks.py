@@ -35,6 +35,14 @@ class Block:
         """
         return self._typedesc
 
+    @property
+    def size(self):
+        """
+        Returns the size of the data block.
+        TODO - for now return 0 but this will eventually contain all data.
+        """
+        return 0
+
 class Header(Block):
     """
     Class for holding header information.
@@ -142,6 +150,13 @@ class DataBlockBinary(Block):
         Returns the binary data of this block.
         """
         return self._data
+
+    @property
+    def size(self):
+        """
+        Return the size of the binary data.
+        """
+        return len(self._data)
 
 class DataBlockProgram(DataBlockBinary):
     """

@@ -76,8 +76,7 @@ class Handler:
         for i, block in enumerate(self.blocks):
             if i == block_idx or block_idx is None:
                 block = self.blocks[i]
-                length = len(block.data)
-                if last_header and last_header.is_code and last_header.parameter1 == 16384 and length >= 6912:
+                if last_header and last_header.is_code and last_header.parameter1 == 16384 and block.size >= 6912:
                     filename = "{}_{:03d}.png".format(file_prefix, i)
                     write_zxscr_to_png(filename, block.data)
                     last_header = None
@@ -232,7 +231,7 @@ class TAPHandler(Handler):
         Returns True if this handler can deal with this file.
         """
         _, ext = os.path.splitext(filename)
-        if os.path.isfile(filename) and ext.lower() == ".tap":
+        if ext.lower() == ".tap":
             return True
         return False
 

@@ -26,21 +26,23 @@ def _main():
 
     args = parser.parse_args()
 
+    filename = args.file
     if zipfile.is_zipfile(args.file):
         with zipfile.ZipFile(args.file) as zipf:
             # For now get first file in zip - this will need improving at some point
             with zipf.open(zipf.namelist()[0], "r") as f:
+                filename = zipf.namelist()[0]
                 data = f.read()
     else:
         with open(args.file, "rb") as f:
             data = f.read()
 
-    if TZXHandler.can_handle(args.file, data):
+    if TZXHandler.can_handle(filename, data):
         processor = TZXHandler(data)
-    elif TAPHandler.can_handle(args.file, data):
+    elif TAPHandler.can_handle(filename, data):
         processor = TAPHandler(data)
     else:
-        raise RuntimeError("The {} file appears to be an unsupported type.".format(args.file))
+        raise RuntimeError("The {} file appears to be an unsupported type.".format(filename))
 
     processor.process()
 
