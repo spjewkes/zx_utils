@@ -9,6 +9,22 @@ import argparse
 import array
 import os
 
+class Emulator:
+    """
+    This class describes the virtual z80 platform.
+    """
+    def __init__(self, filename, origin, pc, max_size):
+        # Create memory and load binary data into it
+        self.memory = array.array('B', [0] * origin)
+        file_size = os.stat(filename).st_size
+        with open(filename, mode='rb') as file:
+            self.memory.fromfile(file, file_size)
+        
+        # Extend memory to cover maximum size
+        if len(self.memory) < max_size:
+            self.memory.extend([0] * (max_size - len(self.memory)))
+        print(len(self.memory))
+
 def _main():
     parser = argparse.ArgumentParser(description='Utility for disassembling Z80 binary files')
     parser.add_argument('file', metavar='FILE', type=str, help='Binary data file to disassemble.')
@@ -19,15 +35,7 @@ def _main():
     args = parser.parse_args()
     filename = args.file
 
-    # Load binary file into the start of the origin
-    memory = array.array('B', [0] * args.origin)
-    size = os.stat(args.file).st_size
-    with open(args.file, mode='rb') as file:
-        memory.fromfile(file, size)
-
-    if len(memory) < args.addrsize:
-        memory.extend([0] * (args.addrsize - len(memory)))
-    print(len(memory))
+    machine = Emulator(args.file, args.origin, args.pc, args.addrsize)
 
 if __name__ == "__main__":
     _main()
